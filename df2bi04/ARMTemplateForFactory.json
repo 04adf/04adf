@@ -1,0 +1,253 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory-Name",
+			"defaultValue": "df2bi04"
+		},
+		"IsBI04Northwind_connectionString": {
+			"type": "secureString",
+			"metadata": "Sichere Zeichenfolge für \"connectionString\" von \"IsBI04Northwind\""
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pCopyCustomers')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "dfCopyCustomers",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dfCopyCustomersNew",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"NorthwindCustomers": {},
+									"Customers04": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-12-09T21:21:05Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dfCopyCustomersNew')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dsBI04NorthwindCustomers')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "IsBI04Northwind",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "nchar"
+					},
+					{
+						"name": "CompanyName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ContactName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ContactTitle",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Address",
+						"type": "nvarchar"
+					},
+					{
+						"name": "City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Region",
+						"type": "nvarchar"
+					},
+					{
+						"name": "PostalCode",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Country",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Phone",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Fax",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Customers"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/IsBI04Northwind')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dsBI04NorthwindCustomers04')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "IsBI04Northwind",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Customer_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CompanyName",
+						"type": "varchar"
+					},
+					{
+						"name": "ContactName",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Customers04"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/IsBI04Northwind')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/IsBI04Northwind')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('IsBI04Northwind_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dfCopyCustomersNew')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "dsBI04NorthwindCustomers",
+								"type": "DatasetReference"
+							},
+							"name": "NorthwindCustomers"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "dsBI04NorthwindCustomers04",
+								"type": "DatasetReference"
+							},
+							"name": "Customers04"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as string,",
+						"          CompanyName as string,",
+						"          ContactName as string,",
+						"          ContactTitle as string,",
+						"          Address as string,",
+						"          City as string,",
+						"          Region as string,",
+						"          PostalCode as string,",
+						"          Country as string,",
+						"          Phone as string,",
+						"          Fax as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> NorthwindCustomers",
+						"NorthwindCustomers sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Customer_ID as integer,",
+						"          CompanyName as string,",
+						"          ContactName as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          CompanyName,",
+						"          ContactName",
+						"     )) ~> Customers04"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/dsBI04NorthwindCustomers')]",
+				"[concat(variables('factoryId'), '/datasets/dsBI04NorthwindCustomers04')]"
+			]
+		}
+	]
+}
